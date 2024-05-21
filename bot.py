@@ -50,6 +50,22 @@ admin = AdminUtils(dB, bot)
 async def _start(event):
     msg_id = event.pattern_match.group(1)
     xnx = await event.reply("`Please Wait...`")
+    if Var.FORCESUB_CHANNEL and Var.FORCESUB_CHANNEL_LINK:
+        is_user_joined = await bot.is_joined(Var.FORCESUB_CHANNEL, event.sender_id)
+        if is_user_joined:
+            pass
+        else:
+            return await xnx.edit(
+                f"**Please Join {Var.FORCESUB_CHANNEL_LINK} To Use This Bot**",
+                buttons=[
+                    [
+                        Button.url(
+                            "♻️ REFRESH",
+                            url=f"https://t.me/{((await bot.get_me()).username)}?start={msg_id}",
+                        )
+                    ]
+                ],
+            )
     if msg_id:
         if msg_id.isdigit():
             msg = await bot.get_messages(Var.BACKUP_CHANNEL, ids=int(msg_id))
@@ -116,7 +132,7 @@ async def anime(data):
     try:
         torr = [data.get("480p"), data.get("720p"), data.get("1080p")]
         poster = await tools._poster(bot, AnimeInfo(torr[0].title))
-        btn = []
+        btn = [[]]
         for i in torr:
             try:
                 filename = f"downloads/{i.title}"
@@ -137,8 +153,11 @@ async def anime(data):
                 result, _btn = await exe.execute()
                 if result:
                     if _btn:
-                        btn.append(_btn)
-                        await poster.edit(buttons=[btn])
+                        if len(btn[0]) == 2:
+                            btn.append([_btn])
+                        else:
+                            btn[0].append(_btn)
+                        await poster.edit(buttons=btn)
                     asyncio.ensure_future(exe.further_work())
                     continue
                 await reporter.report_error(_btn, log=True)

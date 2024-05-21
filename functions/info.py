@@ -16,7 +16,6 @@
 # if you are using this following code then don't forgot to give proper
 # credit to t.me/kAiF_00z (github.com/kaif-00z)
 
-import re
 from datetime import datetime
 
 import anitopy
@@ -30,16 +29,16 @@ class AnimeInfo:
     def __init__(self, name):
         self.kitsu = RawAnimeInfo()
         self.CAPTION = """
-**〄 {} • {}
+**{}
 ━━━━━━━━━━━━━━━
-⬡ Quality: 720p, 1080p
-⬡ Audio: Japanese [English Subtitles]
-⬡ Genres: {}
+‣ Language : Japanese [English-Sub]
+‣ Quality : 480p, 720p, 1080p
+‣ Season : {}
+‣ Episode : {}
 ━━━━━━━━━━━━━━━
 〣 Next Airing Episode: {}
 〣 Next Airing Episode Date: {}
 ━━━━━━━━━━━━━━━**
-〣 #{}
 """
         self.proper_name = self.get_proper_name_for_func(name)
         self.name = name
@@ -48,7 +47,7 @@ class AnimeInfo:
     async def get_english(self):
         anime_name = self.data.get("anime_title")
         try:
-            anime = await self.kitsu.search(self.proper_name)
+            anime = (await self.kitsu.search(self.proper_name)) or {}
             return anime.get("english_title").strip() or anime_name
         except Exception as error:
             LOGS.error(str(error))
@@ -74,13 +73,13 @@ class AnimeInfo:
 
     async def get_caption(self):
         try:
-            if self.proper_name:
-                anime = await self.kitsu.search(self.proper_name)
+            if self.proper_name or self.data:
+                anime = (await self.kitsu.search(self.proper_name)) or {}
                 next_ = anime.get("next_airing_ep", {})
                 return self.CAPTION.format(
                     anime.get("english_title").strip() or self.data.get("anime_title"),
-                    anime.get("type"),
-                    ", ".join(anime.get("genres")),
+                    self.data.get("anime_season") or 1,
+                    self.data.get("episode_number") or "N/A",
                     next_.get("episode") or "N/A",
                     (
                         datetime.fromtimestamp(
@@ -89,7 +88,6 @@ class AnimeInfo:
                         if next_.get("airingAt")
                         else "N/A"
                     ),
-                    "".join(re.split("[^a-zA-Z]*", anime.get("english_title") or "")),
                 )
         except Exception as error:
             LOGS.error(str(error))
